@@ -118,6 +118,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .export-btn:active{opacity:.85}
 .export-btn .ico{font-size:17px}
 .last-export{font-size:10px;color:var(--text-dim);font-family:var(--mono);text-align:right;line-height:1.4;min-width:70px}
+.reset-btn{padding:10px 12px;background:#fff3e0;border:1.5px solid #f5a623;border-radius:10px;font-size:16px;cursor:pointer;flex-shrink:0}
+.reset-btn:active{opacity:.8}
+.save-bar{display:flex;align-items:center;gap:6px;padding:5px 14px;background:#f0f7f0;border-bottom:1px solid #c8e6c9;font-size:11px;color:#2e7d32;font-family:var(--mono)}
 
 .view{display:none;padding:10px 10px 88px}
 .view.active{display:block}
@@ -229,7 +232,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <button class="export-btn" onclick="exportExcel()">
     <span class="ico">⬇</span> Esporta Excel
   </button>
+  <button class="reset-btn" onclick="resetDay()" title="Nuova giornata">🔄</button>
   <div class="last-export" id="lastExport">Nessun<br>export</div>
+</div>
+<div class="save-bar">
+  <span style="font-size:14px">💾</span>
+  <span id="lastSave">Caricamento...</span>
 </div>
 
 <!-- VIEW: ELETTRICI -->
@@ -648,8 +656,64 @@ function delSlot(zona,i){
   renderPiaz(); markMod('PIAZ');
 }
 
+// ══ PERSISTENZA localStorage ══
+const LS_KEY = 'elettrici_data';
+
+function saveToStorage(){
+  try {
+    const data = {
+      el8:      S.el8.map(({matr,pct,zona,stallo,note,mode})=>({matr,pct,zona,stallo,note,mode})),
+      el12:     S.el12.map(({matr,pct,zona,stallo,note,mode})=>({matr,pct,zona,stallo,note,mode})),
+      filo:     S.filo.map(({matr,seq,note})=>({matr,seq,note})),
+      piazzale: S.piazzale,
+      savedAt:  new Date().toISOString(),
+    };
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+    updateSaveLabel(data.savedAt);
+  } catch(e){ console.warn('localStorage non disponibile', e); }
+}
+
+function loadFromStorage(){
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return false;
+    const data = JSON.parse(raw);
+    // Merge: mantieni le matricole fisse, aggiorna solo i campi modificabili
+    if(data.el8)  data.el8.forEach(d  => { const v=S.el8.find(x=>x.matr===d.matr);   if(v) Object.assign(v,d); });
+    if(data.el12) data.el12.forEach(d => { const v=S.el12.find(x=>x.matr===d.matr);  if(v) Object.assign(v,d); });
+    if(data.filo) data.filo.forEach(d => { const v=S.filo.find(x=>x.matr===d.matr);  if(v) Object.assign(v,d); });
+    if(data.piazzale) Object.assign(S.piazzale, data.piazzale);
+    updateSaveLabel(data.savedAt);
+    return true;
+  } catch(e){ return false; }
+}
+
+function updateSaveLabel(isoStr){
+  const el = document.getElementById('lastSave');
+  if(!el || !isoStr) return;
+  const d = new Date(isoStr);
+  el.textContent = 'Salvato ' + d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+}
+
+function resetDay(){
+  if(!confirm('Resettare tutti i dati per iniziare una nuova giornata?')) return;
+  localStorage.removeItem(LS_KEY);
+  // Reset stato a valori iniziali
+  S.el8.forEach(v  => { v.pct=100; v.zona=''; v.stallo=''; v.note=''; v.mode='verificare'; });
+  S.el12.forEach(v => { v.pct=100; v.zona=''; v.stallo=''; v.note=''; v.mode='verificare'; });
+  S.filo.forEach(v => { v.seq=null; v.note=''; });
+  Object.keys(S.piazzale).forEach(k => { S.piazzale[k]=S.piazzale[k].map(()=>''); });
+  S.openEl=null; S.openFilo=null; S.mod.clear();
+  renderEl(); renderFilo();
+  document.getElementById('lastSave').textContent = 'Nuova giornata';
+  showToast('✓ Dati azzerati — nuova giornata');
+}
+
 // ══ SHARED ══
-function markMod(id){ S.mod.add(id); }
+function markMod(id){
+  S.mod.add(id);
+  saveToStorage();
+}
 
 function nav(name, btn){
   if(S.openEl){markMod(S.openEl);S.openEl=null;renderEl();}
@@ -668,6 +732,7 @@ function showToast(msg){
 }
 
 // ══ INIT ══
+loadFromStorage();
 renderEl();
 renderFilo();
 </script>
