@@ -1,4 +1,4 @@
-const CACHE = 'elettrici-v3';
+const CACHE = 'elettrici-v4';
 const BASE  = '/elettrici-app';
 const FILES = [
   BASE + '/',
@@ -17,10 +17,14 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
+  // Elimina tutte le cache vecchie
   e.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => k !== CACHE).map(k => caches.delete(k))
+        keys.filter(k => k !== CACHE).map(k => {
+          console.log('Eliminata cache vecchia:', k);
+          return caches.delete(k);
+        })
       ))
       .then(() => self.clients.claim())
   );
@@ -29,6 +33,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   if (e.request.url.startsWith('chrome-extension')) return;
+  // Network first: prova sempre la rete, usa cache solo se offline
   e.respondWith(
     fetch(e.request)
       .then(resp => {
