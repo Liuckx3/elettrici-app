@@ -302,7 +302,19 @@ function exportExcel(){
     ['MATR', 'STATO / %', 'ZONA', 'STALLO', 'NOTE'],
   ];
   S.el8.forEach(v => {
-    const stato = v.mode==='pct'        ? v.pct :
+    const stato = v.mode==='pct'        ? v.pct+'%' :
+                  v.mode==='charging'   ? 'IN CARICA' :
+                  v.mode==='wait'       ? 'DA CARICARE' :
+                  v.mode==='md'         ? 'MD' :
+                  v.mode==='verificare' ? 'VERIFICARE' : 'FERMA';
+    elRows.push([v.matr, stato, v.zona||'', v.stallo||'', v.note||'']);
+  });
+
+  elRows.push([]);
+  elRows.push(['', 'GRANDI 12mt (7201-7211)']);
+  elRows.push(['MATR', 'STATO / %', 'ZONA', 'STALLO', 'NOTE']);
+  S.el12.forEach(v => {
+    const stato = v.mode==='pct'        ? v.pct+'%' :
                   v.mode==='charging'   ? 'IN CARICA' :
                   v.mode==='wait'       ? 'DA CARICARE' :
                   v.mode==='md'         ? 'MD' :
