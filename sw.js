@@ -1,4 +1,4 @@
-const CACHE = 'elettrici-v4';
+const CACHE = 'elettrici-v5';
 const BASE  = '/elettrici-app';
 const FILES = [
   BASE + '/',
@@ -33,7 +33,14 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   if (e.request.url.startsWith('chrome-extension')) return;
-  // Network first: prova sempre la rete, usa cache solo se offline
+  // Non intercettare CDN esterne (fonts, xlsx, ecc.)
+  const url = e.request.url;
+  if (url.includes('cdnjs.cloudflare.com') ||
+      url.includes('fonts.googleapis.com') ||
+      url.includes('fonts.gstatic.com')) {
+    return; // lascia passare direttamente al browser
+  }
+  // Network first per file locali
   e.respondWith(
     fetch(e.request)
       .then(resp => {
