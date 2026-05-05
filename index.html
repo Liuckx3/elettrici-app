@@ -365,9 +365,28 @@ function exportExcel(){
   wsPiaz['!merges'] = [{s:{r:0,c:0},e:{r:0,c:zones.length-1}}];
   XLSX.utils.book_append_sheet(wb, wsPiaz, 'Piazzale Ovest');
 
-  // ── Download ──
+  // ── Download via Blob (compatibile con PWA e SW) ──
   const fname = 'Monitoraggio_'+today.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'-')+'.xlsx';
-  XLSX.writeFile(wb, fname);
+  try {
+    // Metodo 1: XLSX.writeFile standard
+    XLSX.writeFile(wb, fname);
+  } catch(e1) {
+    try {
+      // Metodo 2: download via Blob
+      const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+      const blob  = new Blob([wbout], {type:'application/octet-stream'});
+      const url   = URL.createObjectURL(blob);
+      const a     = document.createElement('a');
+      a.href      = url;
+      a.download  = fname;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
+    } catch(e2) {
+      showToast('⚠ Errore export: ' + e2.message);
+      return;
+    }
+  }
 
   // Update last export label
   document.getElementById('lastExport').innerHTML =
