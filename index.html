@@ -67,14 +67,31 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .date-badge{font-family:var(--mono);font-size:11px;background:var(--surface2);border:1px solid var(--border);padding:4px 10px;border-radius:20px;color:var(--accent);letter-spacing:.5px}
 
 /* EXPORT BAR */
-.export-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border-bottom:1px solid var(--border)}
-.export-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px;background:#1a8a3a;border:none;color:#fff;border-radius:10px;font-family:var(--display);font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.3px;box-shadow:0 2px 6px rgba(26,138,58,.25)}
+.export-bar{display:flex;align-items:center;gap:6px;padding:8px 10px;background:#fff;border-bottom:1px solid var(--border)}
+.export-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 6px;background:#1a8a3a;border:none;color:#fff;border-radius:10px;font-family:var(--display);font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(26,138,58,.25)}
 .export-btn:active{opacity:.85}
-.export-btn .ico{font-size:17px}
-.last-export{font-size:10px;color:var(--text-dim);font-family:var(--mono);text-align:right;line-height:1.4;min-width:70px}
-.reset-btn{padding:10px 12px;background:#fff3e0;border:1.5px solid #f5a623;border-radius:10px;font-size:16px;cursor:pointer;flex-shrink:0}
+.export-btn.blue{background:var(--accent)}
+.export-btn.pdf-btn{background:#c0392b}
+.export-btn .ico{font-size:15px}
+.reset-btn{padding:9px 11px;background:#fff3e0;border:1.5px solid #f5a623;border-radius:10px;font-size:15px;cursor:pointer;flex-shrink:0}
 .reset-btn:active{opacity:.8}
 .save-bar{display:flex;align-items:center;gap:6px;padding:5px 14px;background:#f0f7f0;border-bottom:1px solid #c8e6c9;font-size:11px;color:#2e7d32;font-family:var(--mono)}
+
+/* MODAL EXPORT */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:500;display:flex;align-items:flex-end;justify-content:center}
+.modal-box{background:var(--surface);border-radius:20px 20px 0 0;padding:20px 16px 32px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto}
+.modal-title{font-family:var(--display);font-size:16px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-dim);line-height:1}
+.copy-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;margin-bottom:10px}
+.copy-table th{background:var(--surface2);padding:6px 8px;text-align:left;border:1px solid var(--border);font-size:11px;letter-spacing:.5px}
+.copy-table td{padding:6px 8px;border:1px solid var(--border);vertical-align:top}
+.copy-table tr:nth-child(even) td{background:#f8fafc}
+.copy-area{width:100%;min-height:80px;padding:10px;font-family:var(--mono);font-size:12px;border:1.5px solid var(--border);border-radius:8px;resize:none;background:var(--surface2);color:var(--text)}
+.copy-btn{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:var(--display);font-size:14px;font-weight:700;cursor:pointer;margin-top:8px}
+.copy-btn:active{opacity:.8}
+.section-sep{margin:16px 0 10px;font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);border-top:1px solid var(--border);padding-top:12px}
+.pdf-input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:14px;margin-bottom:10px;outline:none;color:var(--text)}
+.pdf-input:focus{border-color:var(--accent)}
 
 .view{display:none;padding:10px 10px 88px}
 .view.active{display:block}
@@ -183,15 +200,28 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
 <!-- EXPORT BAR -->
 <div class="export-bar">
-  <button class="export-btn" onclick="exportExcel()">
-    <span class="ico">⬇</span> Esporta Excel
+  <button class="export-btn blue" onclick="showExportModal('tabella')">
+    <span class="ico">📋</span> Tabella
+  </button>
+  <button class="export-btn pdf-btn" onclick="showExportModal('pdf')">
+    <span class="ico">📄</span> PDF Piazzale
   </button>
   <button class="reset-btn" onclick="resetDay()" title="Nuova giornata">🔄</button>
-  <div class="last-export" id="lastExport">Nessun<br>export</div>
 </div>
 <div class="save-bar">
   <span style="font-size:14px">💾</span>
   <span id="lastSave">Caricamento...</span>
+</div>
+
+<!-- MODAL EXPORT -->
+<div class="modal-overlay" id="exportModal" style="display:none" onclick="closeModalOutside(event)">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span id="modalTitle">Esporta dati</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div id="modalContent"></div>
+  </div>
 </div>
 
 <!-- VIEW: ELETTRICI -->
@@ -286,113 +316,173 @@ document.getElementById('dateBadge').textContent =
 // ══════════════════════════════════════════
 // EXPORT EXCEL
 // ══════════════════════════════════════════
-function exportExcel(){
-  // Chiudi eventuali righe aperte prima di esportare
-  if(S.openEl)  { markMod(S.openEl);   S.openEl=null;   renderEl();   }
-  if(S.openFilo!==null){ markMod('F'+S.openFilo); S.openFilo=null; renderFilo(); }
+// ══════════════════════════════════════════
+// EXPORT SYSTEM
+// ══════════════════════════════════════════
 
-  const wb = XLSX.utils.book_new();
+function statoLabel(v){
+  return v.mode==='pct'        ? v.pct+'%' :
+         v.mode==='charging'   ? 'IN CARICA' :
+         v.mode==='wait'       ? 'DA CARICARE' :
+         v.mode==='md'         ? 'MD' :
+         v.mode==='verificare' ? 'VERIFICARE' : 'FERMA';
+}
+
+function showExportModal(type){
+  if(S.openEl){markMod(S.openEl);S.openEl=null;renderEl();}
+  if(S.openFilo!==null){markMod('F'+S.openFilo);S.openFilo=null;renderFilo();}
+  const modal = document.getElementById('exportModal');
+  const content = document.getElementById('modalContent');
+  const title = document.getElementById('modalTitle');
+  modal.style.display = 'flex';
+
+  if(type === 'tabella'){
+    title.textContent = '📋 Copia tabella dati';
+    content.innerHTML = buildTabellaHTML();
+  } else {
+    title.textContent = '📄 PDF Piazzale Ovest';
+    content.innerHTML = buildPdfFormHTML();
+  }
+}
+
+function closeModal(){
+  document.getElementById('exportModal').style.display='none';
+}
+function closeModalOutside(e){
+  if(e.target.id==='exportModal') closeModal();
+}
+
+// ── TABELLA TESTO ──
+function buildTabellaHTML(){
   const dateStr = today.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
-
-  // ── Foglio 1: ELETTRICI ──
-  const elRows = [
-    ['MONITORAGGIO VEICOLI ELETTRICI — '+dateStr],
-    [],
-    ['', 'PICCOLI 8mt (7111-7121)'],
-    ['MATR', 'STATO / %', 'ZONA', 'STALLO', 'NOTE'],
-  ];
+  
+  // Costruisci testo tab-separated per copia su Excel
+  let txt = 'ELETTRICI ' + dateStr + '\n';
+  txt += 'PICCOLI 8mt\n';
+  txt += 'MATR\tSTATO\tZONA\tSTALLO\tNOTE\n';
   S.el8.forEach(v => {
-    const stato = v.mode==='pct'        ? v.pct+'%' :
-                  v.mode==='charging'   ? 'IN CARICA' :
-                  v.mode==='wait'       ? 'DA CARICARE' :
-                  v.mode==='md'         ? 'MD' :
-                  v.mode==='verificare' ? 'VERIFICARE' : 'FERMA';
-    elRows.push([v.matr, stato, v.zona||'', v.stallo||'', v.note||'']);
+    txt += v.matr+'\t'+statoLabel(v)+'\t'+(v.zona||'')+'\t'+(v.stallo||'')+'\t'+(v.note||'')+'\n';
   });
-
-  elRows.push([]);
-  elRows.push(['', 'GRANDI 12mt (7201-7211)']);
-  elRows.push(['MATR', 'STATO / %', 'ZONA', 'STALLO', 'NOTE']);
+  txt += '\nGRANDI 12mt\n';
+  txt += 'MATR\tSTATO\tZONA\tSTALLO\tNOTE\n';
   S.el12.forEach(v => {
-    const stato = v.mode==='pct'        ? v.pct+'%' :
-                  v.mode==='charging'   ? 'IN CARICA' :
-                  v.mode==='wait'       ? 'DA CARICARE' :
-                  v.mode==='md'         ? 'MD' :
-                  v.mode==='verificare' ? 'VERIFICARE' : 'FERMA';
-    elRows.push([v.matr, stato, v.zona||'', v.stallo||'', v.note||'']);
+    txt += v.matr+'\t'+statoLabel(v)+'\t'+(v.zona||'')+'\t'+(v.stallo||'')+'\t'+(v.note||'')+'\n';
   });
+  txt += '\nFILOSNODATI\n';
+  txt += 'MATR\tUSCITA\tNOTE\n';
+  const uscenti = S.filo.filter(v=>v.seq!==null).sort((a,b)=>parseInt(a.seq.slice(1))-parseInt(b.seq.slice(1)));
+  const fermi = S.filo.filter(v=>v.seq===null);
+  uscenti.forEach(v => { txt += v.matr+'\t'+v.seq+'\t'+(v.note||'')+'\n'; });
+  fermi.forEach(v => { txt += v.matr+'\t—\t'+(v.note||'')+'\n'; });
 
-  const wsEl = XLSX.utils.aoa_to_sheet(elRows);
-  // Larghezze colonne
-  wsEl['!cols'] = [{wch:10},{wch:14},{wch:8},{wch:8},{wch:30}];
-  // Merge titolo
-  wsEl['!merges'] = [{s:{r:0,c:0},e:{r:0,c:4}}];
-  XLSX.utils.book_append_sheet(wb, wsEl, 'Elettrici');
-
-  // ── Foglio 2: FILOSNODATI ──
-  const filoRows = [
-    ['FILOSNODATI — '+dateStr],
-    [],
-    ['MATR', 'SEQUENZA USCITA', 'NOTE'],
-  ];
-  // Ordinati per sequenza, poi quelli senza
-  const uscenti = S.filo.filter(v=>v.seq!==null)
-    .sort((a,b)=>parseInt(a.seq.slice(1))-parseInt(b.seq.slice(1)));
-  const fermi   = S.filo.filter(v=>v.seq===null);
-  uscenti.forEach(v => filoRows.push([v.matr, v.seq, v.note||'']));
-  if(fermi.length){
-    filoRows.push([]);
-    filoRows.push(['— Non escono —','','']);
-    fermi.forEach(v => filoRows.push([v.matr, '—', v.note||'']));
+  // Tabella visiva
+  function tableRows8(){ return S.el8.map(v=>`<tr><td>${v.matr}</td><td><b>${statoLabel(v)}</b></td><td>${v.zona||''}</td><td>${v.stallo||''}</td><td>${v.note||''}</td></tr>`).join(''); }
+  function tableRows12(){ return S.el12.map(v=>`<tr><td>${v.matr}</td><td><b>${statoLabel(v)}</b></td><td>${v.zona||''}</td><td>${v.stallo||''}</td><td>${v.note||''}</td></tr>`).join(''); }
+  function tableRowsFilo(){
+    const rows = [...uscenti.map(v=>`<tr><td>${v.matr}</td><td><b>${v.seq}</b></td><td>${v.note||''}</td></tr>`),
+                  ...fermi.map(v=>`<tr style="color:var(--text-dim)"><td>${v.matr}</td><td>—</td><td>${v.note||''}</td></tr>`)];
+    return rows.join('');
   }
 
-  const wsFilo = XLSX.utils.aoa_to_sheet(filoRows);
-  wsFilo['!cols'] = [{wch:10},{wch:16},{wch:30}];
-  wsFilo['!merges'] = [{s:{r:0,c:0},e:{r:0,c:2}}];
-  XLSX.utils.book_append_sheet(wb, wsFilo, 'Filosnodati');
+  return `
+    <div class="section-sep">Piccoli 8mt</div>
+    <table class="copy-table">
+      <tr><th>MATR</th><th>STATO</th><th>ZONA</th><th>STALLO</th><th>NOTE</th></tr>
+      ${tableRows8()}
+    </table>
+    <div class="section-sep">Grandi 12mt</div>
+    <table class="copy-table">
+      <tr><th>MATR</th><th>STATO</th><th>ZONA</th><th>STALLO</th><th>NOTE</th></tr>
+      ${tableRows12()}
+    </table>
+    <div class="section-sep">Filosnodati</div>
+    <table class="copy-table">
+      <tr><th>MATR</th><th>USCITA</th><th>NOTE</th></tr>
+      ${tableRowsFilo()}
+    </table>
+    <div class="section-sep">Testo da copiare su Excel</div>
+    <p style="font-size:11px;color:var(--text-dim);margin-bottom:6px">Seleziona tutto il testo → copia → incolla su Excel. Le colonne si separeranno automaticamente.</p>
+    <textarea class="copy-area" id="copyArea" readonly>${txt}</textarea>
+    <button class="copy-btn" onclick="copyText()">📋 Copia tutto il testo</button>
+  `;
+}
 
-  // ── Foglio 3: PIAZZALE ──
-  const piazRows = [['PIAZZALE OVEST — '+dateStr],[]];
-  const zones = Object.keys(S.piazzale);
-  piazRows.push(zones);
-  const maxLen = Math.max(...zones.map(z=>S.piazzale[z].length));
-  for(let i=0;i<maxLen;i++){
-    piazRows.push(zones.map(z=>S.piazzale[z][i]||''));
-  }
-
-  const wsPiaz = XLSX.utils.aoa_to_sheet(piazRows);
-  wsPiaz['!cols'] = zones.map(()=>({wch:14}));
-  wsPiaz['!merges'] = [{s:{r:0,c:0},e:{r:0,c:zones.length-1}}];
-  XLSX.utils.book_append_sheet(wb, wsPiaz, 'Piazzale Ovest');
-
-  // ── Download via Blob (compatibile con PWA e SW) ──
-  const fname = 'Monitoraggio_'+today.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'-')+'.xlsx';
+function copyText(){
+  const area = document.getElementById('copyArea');
+  area.select();
   try {
-    // Metodo 1: XLSX.writeFile standard
-    XLSX.writeFile(wb, fname);
-  } catch(e1) {
-    try {
-      // Metodo 2: download via Blob
-      const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-      const blob  = new Blob([wbout], {type:'application/octet-stream'});
-      const url   = URL.createObjectURL(blob);
-      const a     = document.createElement('a');
-      a.href      = url;
-      a.download  = fname;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
-    } catch(e2) {
-      showToast('⚠ Errore export: ' + e2.message);
-      return;
-    }
+    navigator.clipboard.writeText(area.value).then(()=>showToast('✓ Testo copiato!'));
+  } catch(e){
+    document.execCommand('copy');
+    showToast('✓ Testo copiato!');
+  }
+}
+
+// ── PDF PIAZZALE ──
+function buildPdfFormHTML(){
+  const dateStr = today.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
+  return `
+    <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px">Inserisci il nome dell'operatore — poi stampa o condividi come PDF.</p>
+    <input class="pdf-input" type="text" id="operatoreInput" placeholder="Nome operatore..." autocomplete="name">
+    <button class="copy-btn" style="background:#c0392b" onclick="stampaPiazzale()">📄 Apri PDF Piazzale</button>
+  `;
+}
+
+function stampaPiazzale(){
+  const operatore = document.getElementById('operatoreInput')?.value?.trim() || '—';
+  const dateStr = today.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const zones = Object.keys(S.piazzale);
+  const maxLen = Math.max(...zones.map(z=>S.piazzale[z].filter(s=>s.trim()).length), 1);
+
+  let tableRows = '';
+  for(let i=0; i<maxLen; i++){
+    tableRows += '<tr>' + zones.map(z=>{
+      const v = S.piazzale[z][i]||'';
+      return `<td>${v}</td>`;
+    }).join('') + '</tr>';
   }
 
-  // Update last export label
-  document.getElementById('lastExport').innerHTML =
-    'Esportato<br>'+new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+  const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
+  <title>Piazzale Ovest — ${dateStr}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:Arial,sans-serif;padding:20px;color:#111}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;border-bottom:2px solid #0066cc;padding-bottom:10px}
+    .title{font-size:20px;font-weight:800;color:#0066cc;letter-spacing:-0.3px}
+    .meta{font-size:12px;color:#555;text-align:right;line-height:1.8}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{background:#0066cc;color:#fff;padding:8px 10px;text-align:center;font-size:11px;letter-spacing:1px;text-transform:uppercase}
+    td{padding:7px 10px;border:1px solid #d0d9e4;text-align:center;font-family:monospace;font-size:14px;font-weight:500}
+    tr:nth-child(even) td{background:#f5f8fc}
+    td:empty::after{content:'—';color:#ccc}
+    .footer{margin-top:16px;font-size:10px;color:#aaa;text-align:right}
+    @media print{body{padding:10px}.footer{position:fixed;bottom:10px;right:10px}}
+  </style></head><body>
+  <div class="header">
+    <div>
+      <div class="title">🗺 PIAZZALE OVEST</div>
+      <div style="font-size:12px;color:#555;margin-top:3px">Monitoraggio veicoli</div>
+    </div>
+    <div class="meta">
+      <div><b>Data:</b> ${dateStr}</div>
+      <div><b>Operatore:</b> ${operatore}</div>
+      <div><b>Ora:</b> ${new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}</div>
+    </div>
+  </div>
+  <table>
+    <tr>${zones.map(z=>`<th>${z}</th>`).join('')}</tr>
+    ${tableRows}
+  </table>
+  <div class="footer">Generato da Elettrici.APP — ${dateStr}</div>
+  <script>window.onload=()=>{window.print()}<\/script>
+  </body></html>`;
 
-  showToast('✓ File Excel scaricato!');
+  const blob = new Blob([html], {type:'text/html'});
+  const url  = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+  closeModal();
+  showToast('✓ PDF aperto — usa Stampa → Salva come PDF');
 }
 
 // ══════════════════════════════════════════
