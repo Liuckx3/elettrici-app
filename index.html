@@ -44,6 +44,8 @@ function installApp(){
 <\/script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -443,59 +445,72 @@ function buildPdfFormHTML(){
 
 function stampaPiazzale(){
   const operatore = document.getElementById('operatoreInput')?.value?.trim() || '—';
-  const dateStr = today.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
-  const zones = Object.keys(S.piazzale);
-  const maxLen = Math.max(...zones.map(z=>S.piazzale[z].filter(s=>s.trim()).length), 1);
+  const dateStr   = today.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const ora       = new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+  const zones     = Object.keys(S.piazzale);
+  const maxLen    = Math.max(...zones.map(z=>S.piazzale[z].filter(s=>s.trim()).length), 1);
 
-  let tableRows = '';
-  for(let i=0; i<maxLen; i++){
-    tableRows += '<tr>' + zones.map(z=>{
-      const v = S.piazzale[z][i]||'';
-      return `<td>${v}</td>`;
-    }).join('') + '</tr>';
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+
+    // ── Intestazione ──
+    doc.setFillColor(0, 102, 204);
+    doc.rect(0, 0, 297, 18, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(13);
+    doc.setFont('helvetica','bold');
+    doc.text('PIAZZALE OVEST', 10, 12);
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica','normal');
+    doc.text('Data: ' + dateStr + '   Ora: ' + ora + '   Operatore: ' + operatore, 297-10, 12, {align:'right'});
+
+    // ── Tabella ──
+    const head = [zones];
+    const body = [];
+    for(let i=0; i<maxLen; i++){
+      body.push(zones.map(z => S.piazzale[z][i]||''));
+    }
+
+    doc.autoTable({
+      head,
+      body,
+      startY: 22,
+      styles: {
+        font: 'courier', fontSize: 11, cellPadding: 4,
+        halign: 'center', valign: 'middle',
+        lineColor: [208,217,228], lineWidth: 0.3,
+        textColor: [26,37,53],
+      },
+      headStyles: {
+        fillColor: [0,102,204], textColor: 255,
+        fontSize: 9, fontStyle: 'bold',
+        halign: 'center', cellPadding: 5,
+      },
+      alternateRowStyles: { fillColor: [245,248,252] },
+      columnStyles: Object.fromEntries(zones.map((_,i)=>([i,{cellWidth:'auto'}]))),
+      margin: { left:8, right:8 },
+    });
+
+    // ── Footer ──
+    const pageH = doc.internal.pageSize.height;
+    doc.setFontSize(7);
+    doc.setTextColor(170,170,170);
+    doc.setFont('helvetica','normal');
+    doc.text('Generato da Elettrici.APP — ' + dateStr, 297-8, pageH-4, {align:'right'});
+
+    // ── Download diretto ──
+    const fname = 'P.LE OVEST ' + dateStr.replace(/\//g,'-') + '.pdf';
+    doc.save(fname);
+    closeModal();
+    showToast('✓ PDF scaricato: ' + fname);
+
+  } catch(err) {
+    // Fallback: apri finestra di stampa se jsPDF non disponibile
+    showToast('⚠ Errore PDF: ' + err.message);
+    console.error(err);
   }
-
-  const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
-  <title>P.LE OVEST ${dateStr.replace(/\//g,'-')}</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:Arial,sans-serif;padding:20px;color:#111}
-    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;border-bottom:2px solid #0066cc;padding-bottom:10px}
-    .title{font-size:20px;font-weight:800;color:#0066cc;letter-spacing:-0.3px}
-    .meta{font-size:12px;color:#555;text-align:right;line-height:1.8}
-    table{width:100%;border-collapse:collapse;font-size:13px}
-    th{background:#0066cc;color:#fff;padding:8px 10px;text-align:center;font-size:11px;letter-spacing:1px;text-transform:uppercase}
-    td{padding:7px 10px;border:1px solid #d0d9e4;text-align:center;font-family:monospace;font-size:14px;font-weight:500}
-    tr:nth-child(even) td{background:#f5f8fc}
-    td:empty::after{content:'—';color:#ccc}
-    .footer{margin-top:16px;font-size:10px;color:#aaa;text-align:right}
-    @media print{body{padding:10px}.footer{position:fixed;bottom:10px;right:10px}}
-  </style></head><body>
-  <div class="header">
-    <div>
-      <div class="title">🗺 PIAZZALE OVEST</div>
-    </div>
-    <div class="meta">
-      <div><b>Data:</b> ${dateStr}</div>
-      <div><b>Operatore:</b> ${operatore}</div>
-    </div>
-  </div>
-  <table>
-    <tr>${zones.map(z=>`<th>${z}</th>`).join('')}</tr>
-    ${tableRows}
-  </table>
-  <div class="footer">Generato da Elettrici.APP — ${dateStr}</div>
-  <script>window.onload=()=>{window.print()}<\/script>
-  </body></html>`;
-
-  // Apri in nuova finestra e lancia stampa automatica
-  const blob = new Blob([html], {type:'text/html'});
-  const url  = URL.createObjectURL(blob);
-  const win  = window.open(url, '_blank');
-  // Il file si chiama automaticamente P.LE OVEST gg-mm-aa grazie al tag <title>
-  setTimeout(()=>URL.revokeObjectURL(url), 10000);
-  closeModal();
-  showToast('✓ Scegli "Salva come PDF" nella finestra di stampa');
 }
 
 // ══════════════════════════════════════════
