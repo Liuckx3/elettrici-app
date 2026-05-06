@@ -478,19 +478,20 @@ function stampaPiazzale(){
       body,
       startY: 22,
       styles: {
-        font: 'courier', fontSize: 11, cellPadding: 4,
+        font: 'courier', fontSize: 8, cellPadding: 1.5,
         halign: 'center', valign: 'middle',
         lineColor: [208,217,228], lineWidth: 0.3,
-        textColor: [26,37,53],
+        textColor: [26,37,53], fontStyle: 'bold',
+        minCellHeight: 6,
       },
       headStyles: {
         fillColor: [0,102,204], textColor: 255,
-        fontSize: 9, fontStyle: 'bold',
-        halign: 'center', cellPadding: 5,
+        fontSize: 7, fontStyle: 'bold',
+        halign: 'center', cellPadding: 2,
       },
       alternateRowStyles: { fillColor: [245,248,252] },
       columnStyles: Object.fromEntries(zones.map((_,i)=>([i,{cellWidth:'auto'}]))),
-      margin: { left:8, right:8 },
+      margin: { left:6, right:6 },
     });
 
     // ── Footer ──
