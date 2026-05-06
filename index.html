@@ -265,30 +265,30 @@ const SEQS   = ['F1','F2','F3','F4','F5','F6','F7','F8'];
 
 const S = {
   el8: [
-    {matr:7111,pct:100,zona:'',stallo:'',note:'',mode:'verificare'},
-    {matr:7112,pct:100,zona:'',stallo:'',note:'',mode:'verificare'},
-    {matr:7113,pct:100,zona:'',stallo:'',note:'',mode:'verificare'},
-    {matr:7114,pct:100,zona:'',stallo:'',note:'',mode:'verificare'},
-    {matr:7115,pct:100,zona:'',stallo:'',note:'',mode:'verificare'},
-    {matr:7116,pct:100,zona:'',stallo:'',note:'',mode:'verificare'},
-    {matr:7117,pct:100,zona:'',stallo:'',note:'',mode:'verificare'},
-    {matr:7118,pct:100,zona:'',stallo:'',note:'',mode:'verificare'},
-    {matr:7119,pct:100,zona:'',stallo:'',note:'',mode:'verificare'},
-    {matr:7120,pct:100,zona:'',stallo:'',note:'',mode:'verificare'},
-    {matr:7121,pct:100,zona:'',stallo:'',note:'',mode:'verificare'},
+    {matr:7111,pct:100,corsia:'',stallo:'',note:'',mode:'verificare'},
+    {matr:7112,pct:100,corsia:'',stallo:'',note:'',mode:'verificare'},
+    {matr:7113,pct:100,corsia:'',stallo:'',note:'',mode:'verificare'},
+    {matr:7114,pct:100,corsia:'',stallo:'',note:'',mode:'verificare'},
+    {matr:7115,pct:100,corsia:'',stallo:'',note:'',mode:'verificare'},
+    {matr:7116,pct:100,corsia:'',stallo:'',note:'',mode:'verificare'},
+    {matr:7117,pct:100,corsia:'',stallo:'',note:'',mode:'verificare'},
+    {matr:7118,pct:100,corsia:'',stallo:'',note:'',mode:'verificare'},
+    {matr:7119,pct:100,corsia:'',stallo:'',note:'',mode:'verificare'},
+    {matr:7120,pct:100,corsia:'',stallo:'',note:'',mode:'verificare'},
+    {matr:7121,pct:100,corsia:'',stallo:'',note:'',mode:'verificare'},
   ],
   el12: [
-    {matr:7201,pct:95, zona:'B',stallo:10,note:'',mode:'verificare'},
-    {matr:7202,pct:100,zona:'B',stallo:6, note:'',mode:'verificare'},
-    {matr:7203,pct:100,zona:'B',stallo:4, note:'',mode:'verificare'},
-    {matr:7204,pct:100,zona:'B',stallo:5, note:'',mode:'verificare'},
-    {matr:7205,pct:0,  zona:'', stallo:'',note:'',mode:'verificare'},
-    {matr:7206,pct:100,zona:'C',stallo:6, note:'',mode:'verificare'},
-    {matr:7207,pct:0,  zona:'', stallo:'',note:'',mode:'verificare'},
-    {matr:7208,pct:100,zona:'A',stallo:3, note:'',mode:'verificare'},
-    {matr:7209,pct:0,  zona:'', stallo:'',note:'',mode:'verificare'},
-    {matr:7210,pct:100,zona:'C',stallo:7, note:'',mode:'verificare'},
-    {matr:7211,pct:100,zona:'B',stallo:3, note:'',mode:'verificare'},
+    {matr:7201,pct:95, corsia:'B',stallo:10,note:'',mode:'verificare'},
+    {matr:7202,pct:100,corsia:'B',stallo:6, note:'',mode:'verificare'},
+    {matr:7203,pct:100,corsia:'B',stallo:4, note:'',mode:'verificare'},
+    {matr:7204,pct:100,corsia:'B',stallo:5, note:'',mode:'verificare'},
+    {matr:7205,pct:0,  corsia:'', stallo:'',note:'',mode:'verificare'},
+    {matr:7206,pct:100,corsia:'C',stallo:6, note:'',mode:'verificare'},
+    {matr:7207,pct:0,  corsia:'', stallo:'',note:'',mode:'verificare'},
+    {matr:7208,pct:100,corsia:'A',stallo:3, note:'',mode:'verificare'},
+    {matr:7209,pct:0,  corsia:'', stallo:'',note:'',mode:'verificare'},
+    {matr:7210,pct:100,corsia:'C',stallo:7, note:'',mode:'verificare'},
+    {matr:7211,pct:100,corsia:'B',stallo:3, note:'',mode:'verificare'},
   ],
   filo: [
     {matr:6511,seq:null,note:''},
@@ -362,55 +362,57 @@ function closeModalOutside(e){
 }
 
 // ── TABELLA TESTO ──
+function statoBreve(v){
+  if(v.mode==='pct')        return String(v.pct);
+  if(v.mode==='charging')   return 'IC';
+  if(v.mode==='wait')       return 'DC';
+  if(v.mode==='md')         return 'MD';
+  if(v.mode==='verificare') return 'VF';
+  return 'FERMA';
+}
+
 function buildTabellaHTML(){
   const dateStr = today.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
-  
-  // Costruisci testo tab-separated per copia su Excel
-  let txt = 'ELETTRICI ' + dateStr + '\n';
-  txt += 'PICCOLI 8mt\n';
-  txt += 'MATR\tSTATO\tZONA\tSTALLO\tNOTE\n';
-  S.el8.forEach(v => {
-    txt += v.matr+'\t'+statoLabel(v)+'\t'+(v.zona||'')+'\t'+(v.stallo||'')+'\t'+(v.note||'')+'\n';
-  });
-  txt += '\nGRANDI 12mt\n';
-  txt += 'MATR\tSTATO\tZONA\tSTALLO\tNOTE\n';
-  S.el12.forEach(v => {
-    txt += v.matr+'\t'+statoLabel(v)+'\t'+(v.zona||'')+'\t'+(v.stallo||'')+'\t'+(v.note||'')+'\n';
-  });
-  txt += '\nFILOSNODATI\n';
-  txt += 'MATR\tUSCITA\tNOTE\n';
   const uscenti = S.filo.filter(v=>v.seq!==null).sort((a,b)=>parseInt(a.seq.slice(1))-parseInt(b.seq.slice(1)));
-  const fermi = S.filo.filter(v=>v.seq===null);
-  uscenti.forEach(v => { txt += v.matr+'\t'+v.seq+'\t'+(v.note||'')+'\n'; });
-  fermi.forEach(v => { txt += v.matr+'\t—\t'+(v.note||'')+'\n'; });
 
-  // Tabella visiva
-  function tableRows8(){ return S.el8.map(v=>`<tr><td>${v.matr}</td><td><b>${statoLabel(v)}</b></td><td>${v.zona||''}</td><td>${v.stallo||''}</td><td>${v.note||''}</td></tr>`).join(''); }
-  function tableRows12(){ return S.el12.map(v=>`<tr><td>${v.matr}</td><td><b>${statoLabel(v)}</b></td><td>${v.zona||''}</td><td>${v.stallo||''}</td><td>${v.note||''}</td></tr>`).join(''); }
-  function tableRowsFilo(){
-    const rows = [...uscenti.map(v=>`<tr><td>${v.matr}</td><td><b>${v.seq}</b></td><td>${v.note||''}</td></tr>`),
-                  ...fermi.map(v=>`<tr style="color:var(--text-dim)"><td>${v.matr}</td><td>—</td><td>${v.note||''}</td></tr>`)];
-    return rows.join('');
-  }
+  // Testo compatto per copia — niente intestazioni, tutto in fila
+  let txt = '';
+  [...S.el8, ...S.el12].forEach(v => {
+    const parts = [v.matr, statoBreve(v), v.corsia||'', v.stallo||'', v.note||''];
+    txt += parts.join('\t').replace(/\t+$/, '') + '\n';
+  });
+  txt += '\n';
+  uscenti.forEach(v => {
+    const parts = [v.matr, v.seq, v.note||''];
+    txt += parts.join('\t').replace(/\t+$/, '') + '\n';
+  });
+
+  // Tabella visiva (con etichette estese per leggibilità a schermo)
+  function elRows(arr){ return arr.map(v=>`
+    <tr>
+      <td>${v.matr}</td>
+      <td><b>${statoLabel(v)}</b></td>
+      <td>${v.corsia||''}</td>
+      <td>${v.stallo||''}</td>
+      <td style="color:var(--text-dim)">${v.note||''}</td>
+    </tr>`).join(''); }
 
   return `
-    <div class="section-sep">Piccoli 8mt</div>
+    <div class="section-sep">Elettrici — 8mt + 12mt</div>
     <table class="copy-table">
-      <tr><th>MATR</th><th>STATO</th><th>ZONA</th><th>STALLO</th><th>NOTE</th></tr>
-      ${tableRows8()}
+      <tr><th>MATR</th><th>STATO</th><th>corsia</th><th>STALLO</th><th>NOTE</th></tr>
+      ${elRows([...S.el8,...S.el12])}
     </table>
-    <div class="section-sep">Grandi 12mt</div>
-    <table class="copy-table">
-      <tr><th>MATR</th><th>STATO</th><th>ZONA</th><th>STALLO</th><th>NOTE</th></tr>
-      ${tableRows12()}
-    </table>
-    <div class="section-sep">Filosnodati</div>
+    <div class="section-sep">Filosnodati in uscita</div>
     <table class="copy-table">
       <tr><th>MATR</th><th>USCITA</th><th>NOTE</th></tr>
-      ${tableRowsFilo()}
+      ${uscenti.map(v=>`<tr><td>${v.matr}</td><td><b>${v.seq}</b></td><td style="color:var(--text-dim)">${v.note||''}</td></tr>`).join('')}
     </table>
     <div class="section-sep">Testo da copiare su Excel</div>
-    <p style="font-size:11px;color:var(--text-dim);margin-bottom:6px">Seleziona tutto il testo → copia → incolla su Excel. Le colonne si separeranno automaticamente.</p>
+    <p style="font-size:11px;color:var(--text-dim);margin-bottom:6px">
+      Incolla su Excel — le colonne si separano automaticamente.<br>
+      Legenda: <b>IC</b>=In carica &nbsp; <b>DC</b>=Da caricare &nbsp; <b>MD</b>=Ricarica esterna &nbsp; <b>VF</b>=Verificare
+    </p>
     <textarea class="copy-area" id="copyArea" readonly>${txt}</textarea>
     <button class="copy-btn" onclick="copyText()">📋 Copia tutto il testo</button>
   `;
@@ -429,11 +431,13 @@ function copyText(){
 
 // ── PDF PIAZZALE ──
 function buildPdfFormHTML(){
-  const dateStr = today.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
   return `
-    <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px">Inserisci il nome dell'operatore — poi stampa o condividi come PDF.</p>
+    <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px">
+      Inserisci il nome dell'operatore — il PDF verrà salvato come<br>
+      <b style="font-family:var(--mono);color:var(--text)">P.LE OVEST ${today.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'-')}.pdf</b>
+    </p>
     <input class="pdf-input" type="text" id="operatoreInput" placeholder="Nome operatore..." autocomplete="name">
-    <button class="copy-btn" style="background:#c0392b" onclick="stampaPiazzale()">📄 Apri PDF Piazzale</button>
+    <button class="copy-btn" style="background:#c0392b" onclick="stampaPiazzale()">📄 Salva PDF Piazzale</button>
   `;
 }
 
@@ -452,7 +456,7 @@ function stampaPiazzale(){
   }
 
   const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
-  <title>Piazzale Ovest — ${dateStr}</title>
+  <title>P.LE OVEST ${dateStr.replace(/\//g,'-')}</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:Arial,sans-serif;padding:20px;color:#111}
@@ -486,12 +490,14 @@ function stampaPiazzale(){
   <script>window.onload=()=>{window.print()}<\/script>
   </body></html>`;
 
+  // Apri in nuova finestra e lancia stampa automatica
   const blob = new Blob([html], {type:'text/html'});
   const url  = URL.createObjectURL(blob);
-  window.open(url, '_blank');
-  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+  const win  = window.open(url, '_blank');
+  // Il file si chiama automaticamente P.LE OVEST gg-mm-aa grazie al tag <title>
+  setTimeout(()=>URL.revokeObjectURL(url), 10000);
   closeModal();
-  showToast('✓ PDF aperto — usa Stampa → Salva come PDF');
+  showToast('✓ Scegli "Salva come PDF" nella finestra di stampa');
 }
 
 // ══════════════════════════════════════════
@@ -520,7 +526,7 @@ function elRowHTML(v, group){
           <span style="color:${col};font-family:var(--mono);font-weight:600">${v.pct}%</span></div>
         <div class="bat-track"><div class="bat-fill" style="width:${v.pct}%;background:${col}"></div></div>
       </div>
-      ${v.zona?`<div class="stallo-chip">${v.zona}${v.stallo}</div>`:''}`;
+      ${v.corsia?`<div class="stallo-chip">${v.corsia}${v.stallo}</div>`:''}`;
   } else {
     const map = {
       charging:  ['strip-charge',    '🔌 IN CARICA'],
@@ -553,12 +559,12 @@ function elRowHTML(v, group){
           oninput="liveSlider('${group}','${id}',${v.matr},this.value)">
       </div>
       <div class="field-group">
-        <span class="field-lbl">Zona</span>
+        <span class="field-lbl">corsia</span>
         <div class="btn-grid">
-          ${ZONES.map(z=>`<button class="obtn ${v.zona===z?'sel':''}" onclick="setElZona('${group}','${id}',${v.matr},'${z}')">${z}</button>`).join('')}
+          ${ZONES.map(z=>`<button class="obtn ${v.corsia===z?'sel':''}" onclick="setElcorsia('${group}','${id}',${v.matr},'${z}')">${z}</button>`).join('')}
         </div>
       </div>
-      ${v.zona&&v.zona!=='LAV'?`
+      ${v.corsia&&v.corsia!=='LAV'?`
       <div class="field-group">
         <span class="field-lbl">Stallo</span>
         <div class="btn-grid">
@@ -599,7 +605,7 @@ function toggleEl(e, group, id, matr){
 function setElMode(group, id, matr, mode){
   const v=S[group].find(x=>x.matr===matr);
   v.mode=mode;
-  if(mode!=='pct' && mode!=='verificare'){v.zona='';v.stallo='';}
+  if(mode!=='pct' && mode!=='verificare'){v.corsia='';v.stallo='';}
   markMod(id); S.openEl=id; renderEl();
 }
 function liveSlider(group, id, matr, val){
@@ -607,9 +613,9 @@ function liveSlider(group, id, matr, val){
   const el=document.getElementById('sv-'+id);
   if(el){el.textContent=val+'%';el.style.color=bCol(parseInt(val));}
 }
-function setElZona(group, id, matr, zona){
+function setElcorsia(group, id, matr, corsia){
   const v=S[group].find(x=>x.matr===matr);
-  v.zona=zona; if(zona==='LAV') v.stallo='';
+  v.corsia=corsia; if(corsia==='LAV') v.stallo='';
   markMod(id); S.openEl=id; renderEl();
 }
 function setElStallo(group, id, matr, n){
@@ -707,36 +713,36 @@ function toggleOrdine(){
 // RENDER PIAZZALE
 // ══════════════════════════════════════════
 function renderPiaz(){
-  document.getElementById('piazCols').innerHTML=Object.entries(S.piazzale).map(([zona,slots])=>{
-    const zid=zona.replace(/[^a-z0-9]/gi,'_');
+  document.getElementById('piazCols').innerHTML=Object.entries(S.piazzale).map(([corsia,slots])=>{
+    const zid=corsia.replace(/[^a-z0-9]/gi,'_');
     const filled=slots.filter(s=>s.trim()).length;
     return `
     <div class="piaz-col">
-      <div class="piaz-hdr">${zona}<small id="ph-${zid}">${filled} veicoli</small></div>
+      <div class="piaz-hdr">${corsia}<small id="ph-${zid}">${filled} veicoli</small></div>
       <div class="piaz-slots">
         ${slots.map((s,i)=>`
           <div class="slot-item">
             <input class="slot-inp" type="text" inputmode="numeric" placeholder="Matr."
               maxlength="6" value="${s}"
-              oninput="updSlot('${zona}',${i},this.value,'${zid}')">
-            <button class="slot-del" onclick="delSlot('${zona}',${i})">✕</button>
+              oninput="updSlot('${corsia}',${i},this.value,'${zid}')">
+            <button class="slot-del" onclick="delSlot('${corsia}',${i})">✕</button>
           </div>`).join('')}
-        <button class="add-slot" onclick="addSlot('${zona}')">＋</button>
+        <button class="add-slot" onclick="addSlot('${corsia}')">＋</button>
       </div>
     </div>`;
   }).join('');
 }
 
-function updSlot(zona,i,val,zid){
-  S.piazzale[zona][i]=val.trim();
+function updSlot(corsia,i,val,zid){
+  S.piazzale[corsia][i]=val.trim();
   const hdr=document.getElementById('ph-'+zid);
-  if(hdr) hdr.textContent=S.piazzale[zona].filter(s=>s.trim()).length+' veicoli';
+  if(hdr) hdr.textContent=S.piazzale[corsia].filter(s=>s.trim()).length+' veicoli';
   markMod('PIAZ');
 }
-function addSlot(zona){S.piazzale[zona].push('');renderPiaz();}
-function delSlot(zona,i){
-  S.piazzale[zona].splice(i,1);
-  if(!S.piazzale[zona].length) S.piazzale[zona].push('');
+function addSlot(corsia){S.piazzale[corsia].push('');renderPiaz();}
+function delSlot(corsia,i){
+  S.piazzale[corsia].splice(i,1);
+  if(!S.piazzale[corsia].length) S.piazzale[corsia].push('');
   renderPiaz(); markMod('PIAZ');
 }
 
@@ -752,8 +758,8 @@ function esportaJSON(){
     version:  1,
     savedAt:  new Date().toISOString(),
     date:     today.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}),
-    el8:      S.el8.map(({matr,pct,zona,stallo,note,mode})=>({matr,pct,zona,stallo,note,mode})),
-    el12:     S.el12.map(({matr,pct,zona,stallo,note,mode})=>({matr,pct,zona,stallo,note,mode})),
+    el8:      S.el8.map(({matr,pct,corsia,stallo,note,mode})=>({matr,pct,corsia,stallo,note,mode})),
+    el12:     S.el12.map(({matr,pct,corsia,stallo,note,mode})=>({matr,pct,corsia,stallo,note,mode})),
     filo:     S.filo.map(({matr,seq,note})=>({matr,seq,note})),
     piazzale: S.piazzale,
   };
@@ -809,8 +815,8 @@ const LS_KEY = 'elettrici_data';
 function saveToStorage(){
   try {
     const data = {
-      el8:      S.el8.map(({matr,pct,zona,stallo,note,mode})=>({matr,pct,zona,stallo,note,mode})),
-      el12:     S.el12.map(({matr,pct,zona,stallo,note,mode})=>({matr,pct,zona,stallo,note,mode})),
+      el8:      S.el8.map(({matr,pct,corsia,stallo,note,mode})=>({matr,pct,corsia,stallo,note,mode})),
+      el12:     S.el12.map(({matr,pct,corsia,stallo,note,mode})=>({matr,pct,corsia,stallo,note,mode})),
       filo:     S.filo.map(({matr,seq,note})=>({matr,seq,note})),
       piazzale: S.piazzale,
       savedAt:  new Date().toISOString(),
@@ -846,8 +852,8 @@ function resetDay(){
   if(!confirm('Resettare tutti i dati per iniziare una nuova giornata?')) return;
   localStorage.removeItem(LS_KEY);
   // Reset stato a valori iniziali
-  S.el8.forEach(v  => { v.pct=100; v.zona=''; v.stallo=''; v.note=''; v.mode='verificare'; });
-  S.el12.forEach(v => { v.pct=100; v.zona=''; v.stallo=''; v.note=''; v.mode='verificare'; });
+  S.el8.forEach(v  => { v.pct=100; v.corsia=''; v.stallo=''; v.note=''; v.mode='verificare'; });
+  S.el12.forEach(v => { v.pct=100; v.corsia=''; v.stallo=''; v.note=''; v.mode='verificare'; });
   S.filo.forEach(v => { v.seq=null; v.note=''; });
   Object.keys(S.piazzale).forEach(k => { S.piazzale[k]=S.piazzale[k].map(()=>''); });
   S.openEl=null; S.openFilo=null; S.mod.clear();
