@@ -209,10 +209,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <span class="ico">📄</span> PDF
   </button>
   <button class="export-btn json-out" onclick="esportaJSON()" title="Esporta dati per PC">
-    <span class="ico">⬆</span> JSON
+    <span class="ico">SCARICA</span> JSON
   </button>
   <button class="export-btn json-in" onclick="importaJSON()" title="Importa dati da telefono">
-    <span class="ico">⬇</span> JSON
+    <span class="ico">CARICA</span> JSON
   </button>
   <button class="reset-btn" onclick="resetDay()" title="Nuova giornata">🔄</button>
 </div>
@@ -400,7 +400,7 @@ function buildTabellaHTML(){
   return `
     <div class="section-sep">Elettrici — 8mt + 12mt</div>
     <table class="copy-table">
-      <tr><th>MATR</th><th>STATO</th><th>corsia</th><th>STALLO</th><th>NOTE</th></tr>
+      <tr><th>MATR</th><th>STATO</th><th>CORSIA</th><th>STALLO</th><th>NOTE</th></tr>
       ${elRows([...S.el8,...S.el12])}
     </table>
     <div class="section-sep">Filosnodati in uscita</div>
