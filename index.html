@@ -67,12 +67,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .date-badge{font-family:var(--mono);font-size:11px;background:var(--surface2);border:1px solid var(--border);padding:4px 10px;border-radius:20px;color:var(--accent);letter-spacing:.5px}
 
 /* EXPORT BAR */
-.export-bar{display:flex;align-items:center;gap:6px;padding:8px 10px;background:#fff;border-bottom:1px solid var(--border)}
-.export-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 6px;background:#1a8a3a;border:none;color:#fff;border-radius:10px;font-family:var(--display);font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(26,138,58,.25)}
+.export-bar{display:flex;align-items:center;gap:5px;padding:8px 10px;background:#fff;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.export-btn{flex:1;min-width:60px;display:flex;align-items:center;justify-content:center;gap:4px;padding:9px 4px;background:#1a8a3a;border:none;color:#fff;border-radius:10px;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(26,138,58,.25)}
 .export-btn:active{opacity:.85}
 .export-btn.blue{background:var(--accent)}
 .export-btn.pdf-btn{background:#c0392b}
-.export-btn .ico{font-size:15px}
+.export-btn.json-out{background:#7c3aed}
+.export-btn.json-in{background:#0891b2}
+.export-btn .ico{font-size:14px}
 .reset-btn{padding:9px 11px;background:#fff3e0;border:1.5px solid #f5a623;border-radius:10px;font-size:15px;cursor:pointer;flex-shrink:0}
 .reset-btn:active{opacity:.8}
 .save-bar{display:flex;align-items:center;gap:6px;padding:5px 14px;background:#f0f7f0;border-bottom:1px solid #c8e6c9;font-size:11px;color:#2e7d32;font-family:var(--mono)}
@@ -204,10 +206,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <span class="ico">📋</span> Tabella
   </button>
   <button class="export-btn pdf-btn" onclick="showExportModal('pdf')">
-    <span class="ico">📄</span> PDF Piazzale
+    <span class="ico">📄</span> PDF
+  </button>
+  <button class="export-btn json-out" onclick="esportaJSON()" title="Esporta dati per PC">
+    <span class="ico">⬆</span> JSON
+  </button>
+  <button class="export-btn json-in" onclick="importaJSON()" title="Importa dati da telefono">
+    <span class="ico">⬇</span> JSON
   </button>
   <button class="reset-btn" onclick="resetDay()" title="Nuova giornata">🔄</button>
 </div>
+<input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="leggiJSON(this)">
 <div class="save-bar">
   <span style="font-size:14px">💾</span>
   <span id="lastSave">Caricamento...</span>
@@ -729,6 +738,69 @@ function delSlot(zona,i){
   S.piazzale[zona].splice(i,1);
   if(!S.piazzale[zona].length) S.piazzale[zona].push('');
   renderPiaz(); markMod('PIAZ');
+}
+
+// ══════════════════════════════════════════
+// IMPORT / EXPORT JSON
+// ══════════════════════════════════════════
+
+function esportaJSON(){
+  if(S.openEl){markMod(S.openEl);S.openEl=null;renderEl();}
+  if(S.openFilo!==null){markMod('F'+S.openFilo);S.openFilo=null;renderFilo();}
+
+  const data = {
+    version:  1,
+    savedAt:  new Date().toISOString(),
+    date:     today.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}),
+    el8:      S.el8.map(({matr,pct,zona,stallo,note,mode})=>({matr,pct,zona,stallo,note,mode})),
+    el12:     S.el12.map(({matr,pct,zona,stallo,note,mode})=>({matr,pct,zona,stallo,note,mode})),
+    filo:     S.filo.map(({matr,seq,note})=>({matr,seq,note})),
+    piazzale: S.piazzale,
+  };
+
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const dateStr = today.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'-');
+  a.href     = url;
+  a.download = 'elettrici_' + dateStr + '.json';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
+  showToast('✓ File JSON scaricato — mandalo al PC');
+}
+
+function importaJSON(){
+  document.getElementById('jsonFileInput').click();
+}
+
+function leggiJSON(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const data = JSON.parse(e.target.result);
+      if(!data.version || !data.el8 || !data.el12 || !data.filo){
+        showToast('⚠ File JSON non valido'); return;
+      }
+      // Merge dati nel stato corrente
+      data.el8.forEach(d  => { const v=S.el8.find(x=>x.matr===d.matr);  if(v) Object.assign(v,d); });
+      data.el12.forEach(d => { const v=S.el12.find(x=>x.matr===d.matr); if(v) Object.assign(v,d); });
+      data.filo.forEach(d => { const v=S.filo.find(x=>x.matr===d.matr); if(v) Object.assign(v,d); });
+      if(data.piazzale) Object.assign(S.piazzale, data.piazzale);
+      // Salva in localStorage e aggiorna UI
+      saveToStorage();
+      S.openEl=null; S.openFilo=null;
+      renderEl(); renderFilo();
+      showToast('✓ Dati importati da: ' + file.name);
+    } catch(err){
+      showToast('⚠ Errore lettura file: ' + err.message);
+    }
+    input.value = ''; // reset input per permettere re-import
+  };
+  reader.readAsText(file);
 }
 
 // ══ PERSISTENZA localStorage ══
