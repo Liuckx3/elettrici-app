@@ -69,16 +69,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .date-badge{font-family:var(--mono);font-size:11px;background:var(--surface2);border:1px solid var(--border);padding:4px 10px;border-radius:20px;color:var(--accent);letter-spacing:.5px}
 
 /* EXPORT BAR */
-.export-bar{display:flex;align-items:center;gap:5px;padding:8px 10px;background:#fff;border-bottom:1px solid var(--border);flex-wrap:wrap}
-.export-btn{flex:1;min-width:60px;display:flex;align-items:center;justify-content:center;gap:4px;padding:9px 4px;background:#1a8a3a;border:none;color:#fff;border-radius:10px;font-family:var(--display);font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(26,138,58,.25)}
+.export-bar{display:flex;align-items:center;gap:5px;padding:8px 10px;background:#fff;border-bottom:1px solid var(--border);flex-wrap:nowrap}
+.export-btn{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:3px;padding:9px 2px;background:#1a8a3a;border:none;color:#fff;border-radius:10px;font-family:var(--display);font-size:clamp(9px,2.2vw,13px);font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(26,138,58,.25);white-space:nowrap;overflow:hidden}
 .export-btn:active{opacity:.85}
 .export-btn.blue{background:var(--accent)}
 .export-btn.pdf-btn{background:#c0392b}
 .export-btn.json-out{background:#7c3aed}
 .export-btn.json-in{background:#0891b2}
-.export-btn .ico{font-size:14px}
-.reset-btn{padding:9px 11px;background:#fff3e0;border:1.5px solid #f5a623;border-radius:10px;font-size:15px;cursor:pointer;flex-shrink:0}
+.export-btn .ico{font-size:clamp(11px,2vw,15px);flex-shrink:0}
+.export-btn .btn-label{overflow:hidden;text-overflow:ellipsis}
+.reset-btn{padding:9px 10px;background:#fff3e0;border:1.5px solid #f5a623;border-radius:10px;font-size:15px;cursor:pointer;flex-shrink:0}
 .reset-btn:active{opacity:.8}
+@media(max-width:380px){
+  .export-bar{gap:4px;padding:7px 8px}
+  .export-btn{border-radius:8px;padding:8px 2px}
+}
 .save-bar{display:flex;align-items:center;gap:6px;padding:5px 14px;background:#f0f7f0;border-bottom:1px solid #c8e6c9;font-size:11px;color:#2e7d32;font-family:var(--mono)}
 
 /* MODAL EXPORT */
@@ -205,16 +210,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 <!-- EXPORT BAR -->
 <div class="export-bar">
   <button class="export-btn blue" onclick="showExportModal('tabella')">
-    <span class="ico">📋</span> Tabella
+    <span class="ico">📋</span><span class="btn-label">Tabella</span>
   </button>
   <button class="export-btn pdf-btn" onclick="showExportModal('pdf')">
-    <span class="ico">📄</span> PDF
+    <span class="ico">📄</span><span class="btn-label">PDF</span>
   </button>
   <button class="export-btn json-out" onclick="esportaJSON()" title="Esporta dati per PC">
-    <span class="ico">SCARICA</span> JSON
+    <span class="ico">⬆</span><span class="btn-label">Scarica JSON</span>
   </button>
   <button class="export-btn json-in" onclick="importaJSON()" title="Importa dati da telefono">
-    <span class="ico">CARICA</span> JSON
+    <span class="ico">⬇</span><span class="btn-label">Carica JSON</span>
   </button>
   <button class="reset-btn" onclick="resetDay()" title="Nuova giornata">🔄</button>
 </div>
